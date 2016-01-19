@@ -149,7 +149,7 @@ sub processdir3
       $ns = $dom->documentElement()->getAttribute('targetNamespace');
       if (defined($ns))
       {
-         print $cat "      <uri name=\"trim($ns)\" uri=\"$schema\"/>\n";
+         print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$schema\"/>\n";
       }
       else
       {
@@ -178,7 +178,7 @@ sub processdir3
          $ns = $dom->documentElement()->getAttribute('targetNamespace');
          if (defined($ns))
          {
-            print $cat "      <uri name=\"trim($ns)\" uri=\"$classification\"/>\n";
+            print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$classification\"/>\n";
          }
          else
          {
