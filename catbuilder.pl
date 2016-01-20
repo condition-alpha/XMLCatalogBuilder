@@ -172,6 +172,18 @@ sub processdir3
       if (defined($docelem))
       {
          $ns = $docelem->getAttribute('uri');
+         if (defined($ns))
+         {
+            print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$classification\"/>\n";
+         }
+         else
+         {
+            print color('bold red');
+            print "\"$dir/$classification\" Warning: ";
+            print color ('reset red');
+            print "Classification Scheme with no namespace; no catalog entry generated\n";
+            print color('reset');
+         }
       }
       else
       { 
