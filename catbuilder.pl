@@ -146,20 +146,32 @@ sub processdir3
       open my $fh, '<', "$dir/$schema";
       binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
       $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
-      $ns = $dom->documentElement()->getAttribute('targetNamespace');
-      if (defined($ns))
+      my $docelem = $dom->getElementsByLocalName('schema')->item(0);
+      if (defined($docelem))
       {
-         print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$schema\"/>\n";
+	$ns = $docelem->getAttribute('targetNamespace');
+	if (defined($ns))
+	{
+	  print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$schema\"/>\n";
+	}
+	else
+	{
+	  print color('bold red');
+	  print "\"$dir/$schema\" Warning: ";
+	  print color ('reset red');
+	  print "W3C XML Schema with no target namespace; no catalog entry generated\n";
+	  print color('reset');
+	}
       }
       else
       {
-         print color('bold red');
-         print "\"$dir/$schema\" Warning: ";
-         print color ('reset red');
-         print "W3C XML Schema with no target namespace; no catalog entry generated\n";
-         print color('reset');
+	  print color('bold red');
+	  print "\"$dir/$schema\" Warning: ";
+	  print color ('reset red');
+	  print ".xsd file with no W3C XML <schema> element; no catalog entry generated\n";
+	  print color('reset');
       }
-   }
+    }
 
    print $cat "      <!-- Classification Schemes -->\n";
    foreach $classification (@classifications)
