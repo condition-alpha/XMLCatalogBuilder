@@ -192,7 +192,7 @@ sub processdir3
       open my $fh, '<', "$dir/$classification";
        binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
        $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
-       my $docelem = $dom->getElementsByTagName('ClassificationScheme')->item(0);
+       my $docelem = $dom->getElementsByTagNameNS('*', 'ClassificationScheme')->item(0);
        if (defined($docelem))
        {
 	 $ns = $docelem->getAttribute('uri');
