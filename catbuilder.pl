@@ -248,7 +248,7 @@ sub processdir3
    }
      
    print $cat "   </group>\n";
-   print "      [group \"$dir\" with " . ($#schemas + $#classifications + $#dtds + 2) . " entries]\n";
+   print "      [group \"$dir\" with " . ($#schemas + $#classifications + $#dtds + 3) . " entries]\n";
      
    # recurse into subdirectories
    foreach $subdir (@subdirs)
