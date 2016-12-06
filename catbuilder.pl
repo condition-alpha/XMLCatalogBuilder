@@ -242,7 +242,7 @@ sub processdir3
        print color('bold magenta');
        print "\"$dir/$dtd\" FIXME: ";
        print color ('reset magenta');
-       print "DTD entry requires manually setting a public and/or system ID in \n";
+       print "DTD catalog entry requires manually setting a public and/or system ID\n";
        print color('reset');
      }
    }
