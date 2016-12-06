@@ -11,6 +11,7 @@
 #
 # *.xsd: root element -> @targetNamespace
 # *.xml: root element -> @uri
+# *.dtd: placeholder entry (public/system ID must be fixed manually)
 #
 # The following directory structure is assumed:
 #
@@ -101,6 +102,7 @@ use XML::LibXML;
 sub isdir { -d $_[0] }
 sub isxsd { $_[0] =~ m/\.xsd$/ }
 sub isxml { $_[0] =~ m/\.xml$/ }
+sub isdtd { $_[0] =~ m/\.dtd$/ }
 sub isdot { $_[0] =~ m/^\./ }
 
 sub trim($)
@@ -115,13 +117,15 @@ sub processdir3
 {
    my $dir = $_[0];
    my $cat = $_[1];
-   
+
    my @subdirs;
    my $subdir;
    my @schemas;
    my @classifications;
+   my @dtds;
    my $schema;
    my $classification;
+   my $dtd;
    my $dom;
    my $ns;
    
@@ -135,55 +139,63 @@ sub processdir3
       # collect schemas and classification schemes
       push(@schemas, $node) if isxsd($node);
       push(@classifications, $node) if isxml($node);
+      # collect DTDs
+      push(@dtds, $node) if isdtd($node);
    }
    close($dh);
 
    print $cat "   <group xml:base=\"$dir/\">\n";
-   print $cat "      <!-- W3C XML Schemas -->\n";
-   foreach $schema (@schemas)
+   
+   if (@schemas)
    {
-      undef $ns;
+     print $cat "      <!-- W3C XML Schemas -->\n";
+     foreach $schema (@schemas)
+     {
+       undef $ns;
       open my $fh, '<', "$dir/$schema";
-      binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
-      $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
-      my $docelem = $dom->getElementsByLocalName('schema')->item(0);
-      if (defined($docelem))
-      {
-	$ns = $docelem->getAttribute('targetNamespace');
-	if (defined($ns))
-	{
-	  print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$schema\"/>\n";
+       binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
+       $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
+       my $docelem = $dom->getElementsByLocalName('schema')->item(0);
+       if (defined($docelem))
+       {
+	 $ns = $docelem->getAttribute('targetNamespace');
+	 if (defined($ns))
+	 {
+	   print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$schema\"/>\n";
+	 }
+	 else
+	 {
+	   print color('bold red');
+	   print "\"$dir/$schema\" Warning: ";
+	   print color ('reset red');
+	   print "W3C XML Schema with no target namespace; no catalog entry generated\n";
+	   print color('reset');
 	}
-	else
-	{
-	  print color('bold red');
-	  print "\"$dir/$schema\" Warning: ";
-	  print color ('reset red');
-	  print "W3C XML Schema with no target namespace; no catalog entry generated\n";
-	  print color('reset');
-	}
-      }
-      else
-      {
-	  print color('bold red');
-	  print "\"$dir/$schema\" Warning: ";
-	  print color ('reset red');
-	  print ".xsd file with no W3C XML <schema> element; no catalog entry generated\n";
-	  print color('reset');
-      }
-    }
+       }
+       else
+       {
+	 print color('bold red');
+	 print "\"$dir/$schema\" Warning: ";
+	 print color ('reset red');
+	 print ".xsd file with no W3C XML <schema> element; no catalog entry generated\n";
+	 print color('reset');
+       }
+     }
+   }
 
-   print $cat "      <!-- Classification Schemes -->\n";
-   foreach $classification (@classifications)
+   if (@classifications)
    {
-      undef $ns;
+     print $cat "      <!-- Classification Schemes -->\n";
+     foreach $classification (@classifications)
+     {
+       undef $ns;
       open my $fh, '<', "$dir/$classification";
-      binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
-      $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
-      my $docelem = $dom->getElementsByTagName('ClassificationScheme')->item(0);
-      if (defined($docelem))
-      {
-         $ns = $docelem->getAttribute('uri');
+       binmode $fh; # drop all PerlIO layers possibly created by a use open pragma
+       $dom = XML::LibXML->load_xml(IO => $fh, recover => 2);
+       my $docelem = $dom->getElementsByTagName('ClassificationScheme')->item(0);
+       if (defined($docelem))
+       {
+	 $ns = $docelem->getAttribute('uri');
          if (defined($ns))
          {
             print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$classification\"/>\n";
@@ -196,28 +208,48 @@ sub processdir3
             print "Classification Scheme with no namespace; no catalog entry generated\n";
             print color('reset');
          }
-      }
-      else
-      { 
+       }
+       else
+       {
          $ns = $dom->documentElement()->getAttribute('targetNamespace');
          if (defined($ns))
-         {
-            print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$classification\"/>\n";
+	 {
+	   print $cat "      <uri name=\"" . trim($ns) . "\" uri=\"$classification\"/>\n";
          }
          else
          {
-            print color('bold red');
-            print "\"$dir/$classification\" Warning: ";
-            print color ('reset red');
-            print "Classification Scheme with no namespace; no catalog entry generated\n";
-            print color('reset');
+	   print color('bold red');
+	   print "\"$dir/$classification\" Warning: ";
+	   print color ('reset red');
+	   print "Classification Scheme with no namespace; no catalog entry generated\n";
+	   print color('reset');
          }
-      }
+       }
+     }
    }
-   
-   print $cat "   </group>\n";
-   print "      [group \"$dir\" with " . ($#schemas + $#classifications + 2) . " entries]\n";
 
+   if (@dtds)
+   {
+     print $cat "      <!-- DTDs -->\n";
+     foreach $dtd (@dtds)
+     {
+       # insert a blank catalog entry
+       print $cat "      <!-- FIXME: please fill in the public and/or system ID for this DTD, and remove any unneeded entry -->\n";
+       print $cat "      <public publicId=\"\" uri=\"$dtd\"/>\n";
+       print $cat "      <system systemId=\"\" uri=\"$dtd\"/>\n";
+       
+       # issue a warning to fill in the public and/or system ID
+       print color('bold magenta');
+       print "\"$dir/$dtd\" FIXME: ";
+       print color ('reset magenta');
+       print "DTD entry requires manually setting a public and/or system ID in \n";
+       print color('reset');
+     }
+   }
+     
+   print $cat "   </group>\n";
+   print "      [group \"$dir\" with " . ($#schemas + $#classifications + $#dtds + 2) . " entries]\n";
+     
    # recurse into subdirectories
    foreach $subdir (@subdirs)
    {
@@ -226,87 +258,89 @@ sub processdir3
       processdir3("$dir/$subdir", $cat);
       chdir($pwd);
    }
-
 }
 
 sub processdir2
 {
-   my $dir = $_[0];
+  my $dir = $_[0];
+  
+  my @subdirs;
+  my $subdir;
    
-   my @subdirs;
-   my $subdir;
+  opendir(my $dh, $dir) or die $!;
+  while (my $node = readdir($dh))
+  {
+    # skip dot files
+    next if isdot($node);
+    # collect subdirectories
+    push(@subdirs, $node) if isdir("$dir/$node");
+  }
+  close($dh);
    
-   opendir(my $dh, $dir) or die $!;
-   while (my $node = readdir($dh))
-   {
-      # skip dot files
-      next if isdot($node);
-      # collect subdirectories
-      push(@subdirs, $node) if isdir("$dir/$node");
-   }
-   close($dh);
-   
-   # preamble
-   print color('bold blue');
-   print "   $dir/catalog.xml\n";
-   print color('reset');
+  # preamble
+  print color('bold blue');
+  print "   $dir/catalog.xml\n";
+  print color('reset');
    open(my $cat, ">:encoding(UTF-8)", "$dir/catalog.xml") or die "cannot open > $dir/catalog.xml: $!";
-   print $cat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-   print $cat "<!DOCTYPE catalog PUBLIC \"-//OASIS//DTD XML Catalogs V1.1//EN\" \"http://www.oasis-open.org/committees/entity/release/1.1/catalog.dtd\">\n";
-   print $cat "<catalog xmlns=\"urn:oasis:names:tc:entity:xmlns:xml:catalog\">\n";
-   
-   # generate groups for files in subdirectories
-   foreach $subdir (@subdirs)
-   {
-      my $pwd = cwd();
-      chdir($dir);
-      processdir3($subdir, $cat);
-      chdir($pwd);
-   }
+  print $cat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  print $cat "<!DOCTYPE catalog PUBLIC \"-//OASIS//DTD XML Catalogs V1.1//EN\" \"http://www.oasis-open.org/committees/entity/release/1.1/catalog.dtd\">\n";
+  print $cat "<catalog xmlns=\"urn:oasis:names:tc:entity:xmlns:xml:catalog\">\n";
+  
+  # generate groups for files in subdirectories
+  foreach $subdir (@subdirs)
+  {
+    my $pwd = cwd();
+    chdir($dir);
+    processdir3($subdir, $cat);
+    chdir($pwd);
+  }
 
-   #postamble
-   print $cat "</catalog>\n";
-   close($cat);
+  #postamble
+  print $cat "</catalog>\n";
+  close($cat);
 }
 
 sub processdir1
 {
-   my $dir = $_[0];
-   
-   my @subdirs;
-   my $subdir;
-   
-   opendir(my $dh, $dir) or die $!;
-   while (my $node = readdir($dh))
-   {
-      # skip dot files
-      next if isdot($node);
-      # collect subdirectories
-      push(@subdirs, $node) if isdir($node);
-   }
-   closedir($dh);
-   #
-   # generate pointers to catalog in next level subdirs
-   #
-   print color('bold blue');
-   print "   $dir/catalog.xml\n";
-   print color('reset');
-   open(my $cat, ">:encoding(UTF-8)", "$dir/catalog.xml") or die "cannot open > $dir/catalog.xml: $!";
-   print $cat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-   print $cat "<!DOCTYPE catalog PUBLIC \"-//OASIS//DTD XML Catalogs V1.1//EN\" \"http://www.oasis-open.org/committees/entity/release/1.1/catalog.dtd\">\n";
-   print $cat "<catalog xmlns=\"urn:oasis:names:tc:entity:xmlns:xml:catalog\">\n";
-   foreach $subdir (@subdirs)
-   {
-      print $cat "   <nextCatalog catalog=\"$subdir/catalog.xml\"/>\n";
-   }
-   print $cat "</catalog>\n";
-   close($cat);
-   
-   # recurse into subdirectories
-   foreach $subdir (@subdirs)
-   {
-      processdir2($subdir);
-   }
+  my $dir = $_[0];
+  
+  my @subdirs;
+  my $subdir;
+  
+  opendir(my $dh, $dir) or die $!;
+  while (my $node = readdir($dh))
+  {
+    # skip dot files
+    next if isdot($node);
+    # collect subdirectories
+    push(@subdirs, $node) if isdir("$dir/$node");
+  }
+  closedir($dh);
+  #
+  # generate pointers to catalog in next level subdirs
+  #
+  print color('bold blue');
+  print "   $dir/catalog.xml\n";
+  print color('reset');
+  open(my $cat, ">:encoding(UTF-8)", "$dir/catalog.xml") or die "cannot open > $dir/catalog.xml: $!";
+  print $cat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+  print $cat "<!DOCTYPE catalog PUBLIC \"-//OASIS//DTD XML Catalogs V1.1//EN\" \"http://www.oasis-open.org/committees/entity/release/1.1/catalog.dtd\">\n";
+  print $cat "<catalog xmlns=\"urn:oasis:names:tc:entity:xmlns:xml:catalog\">\n";
+  foreach $subdir (@subdirs)
+  {
+    print $cat "   <nextCatalog catalog=\"$subdir/catalog.xml\"/>\n";
+  }
+  print $cat "</catalog>\n";
+  close($cat);
+  
+  # recurse into subdirectories
+  foreach $subdir (@subdirs)
+  {
+    my $pwd = cwd();
+    chdir($dir);
+    processdir2($subdir);
+    chdir($pwd);
+  }
 }
 
 
@@ -314,13 +348,12 @@ sub processdir1
 # void main() {
 ###
 print "Generating XML Catalog files:\n";
-my $numargs = $#ARGV + 1;
-if ($numargs >= 1)
+if (@ARGV)
 {
-   foreach my $argnum (0 .. $#ARGV)
-   {
-      processdir1($ARGV[$argnum]);
-   }
+  foreach my $argnum (0 .. $#ARGV)
+  {
+    processdir1($ARGV[$argnum]);
+  }
 }
 else
 {
