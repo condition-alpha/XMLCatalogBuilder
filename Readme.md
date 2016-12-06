@@ -75,7 +75,3 @@ Change log
 2016-01-16 - **v1.0**
 
 * First commit. ([c-alpha](https://github.com/c-alpha))
-
-2016-12-16 - **v1.1**
-
-* Add support for DTDs, fix command line processing. ([c-alpha](https://github.com/c-alpha))
