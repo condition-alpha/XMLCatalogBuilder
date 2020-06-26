@@ -47,7 +47,7 @@
 # versions (e.g. 2012, or 2.3.0). This enables you to simply drop an XML
 # metadata package into one the version directories (if there is only one
 # version simpley call it "Content") as it is, and the generated catalogs will
-# reside _outside_ of the package (i.e. it will remain unaltered). 
+# reside _outside_ of the package (i.e. it will remain unaltered).
 #
 # -----------------------------------------------------------------------------
 # EXAMPLE:
@@ -128,7 +128,7 @@ sub processdir3
    my $dtd;
    my $dom;
    my $ns;
-   
+
    opendir(my $dh, $dir) or die $!;
    while (my $node = readdir($dh))
    {
@@ -145,7 +145,7 @@ sub processdir3
    close($dh);
 
    print $cat "   <group xml:base=\"$dir/\">\n";
-   
+
    if (@schemas)
    {
      print $cat "      <!-- W3C XML Schemas -->\n";
@@ -237,7 +237,7 @@ sub processdir3
        print $cat "      <!-- FIXME: please fill in the public and/or system ID for this DTD, and remove any unneeded entry -->\n";
        print $cat "      <public publicId=\"\" uri=\"$dtd\"/>\n";
        print $cat "      <system systemId=\"\" uri=\"$dtd\"/>\n";
-       
+
        # issue a warning to fill in the public and/or system ID
        print color('bold magenta');
        print "\"$dir/$dtd\" FIXME: ";
@@ -246,10 +246,10 @@ sub processdir3
        print color('reset');
      }
    }
-     
+
    print $cat "   </group>\n";
    print "      [group \"$dir\" with " . ($#schemas + $#classifications + $#dtds + 3) . " entries]\n";
-     
+
    # recurse into subdirectories
    foreach $subdir (@subdirs)
    {
@@ -263,10 +263,10 @@ sub processdir3
 sub processdir2
 {
   my $dir = $_[0];
-  
+
   my @subdirs;
   my $subdir;
-   
+
   opendir(my $dh, $dir) or die $!;
   while (my $node = readdir($dh))
   {
@@ -276,7 +276,7 @@ sub processdir2
     push(@subdirs, $node) if isdir("$dir/$node");
   }
   close($dh);
-   
+
   # preamble
   print color('bold blue');
   print "   $dir/catalog.xml\n";
@@ -285,7 +285,7 @@ sub processdir2
   print $cat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
   print $cat "<!DOCTYPE catalog PUBLIC \"-//OASIS//DTD XML Catalogs V1.1//EN\" \"http://www.oasis-open.org/committees/entity/release/1.1/catalog.dtd\">\n";
   print $cat "<catalog xmlns=\"urn:oasis:names:tc:entity:xmlns:xml:catalog\">\n";
-  
+
   # generate groups for files in subdirectories
   foreach $subdir (@subdirs)
   {
@@ -303,10 +303,10 @@ sub processdir2
 sub processdir1
 {
   my $dir = $_[0];
-  
+
   my @subdirs;
   my $subdir;
-  
+
   opendir(my $dh, $dir) or die $!;
   while (my $node = readdir($dh))
   {
@@ -332,7 +332,7 @@ sub processdir1
   }
   print $cat "</catalog>\n";
   close($cat);
-  
+
   # recurse into subdirectories
   foreach $subdir (@subdirs)
   {
